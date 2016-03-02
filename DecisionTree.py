@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from math import log2
-
-from functools import reduce
-
+from DrawTree import createPlot
 
 def calEntropy(dataSet):
     categories = {}
@@ -135,6 +133,7 @@ class TreeError(BaseException):
 
 
 class DecisionTree:
+
     def __init__(self, dataSet, labels, method='entropy'):
         if method == 'entropy':
             self.chooseFunc = chooseBestFeatureWithEntropy
@@ -197,6 +196,8 @@ class DecisionTree:
                 retNode.children[value] = self.createTree(subDataSet, new_labels, new_attrValues)
         return retNode
 
+    def pruning(self):
+        pass
 
 def preOrder(DT):
     print(DT.feature, DT.children.keys())
@@ -205,17 +206,6 @@ def preOrder(DT):
     for item in DT.children.values():
         preOrder(item)
 
-
-def countLeaf(DT):
-    if DT.isleaf:
-        return 1
-    return reduce(lambda x, y: x + y, map(countLeaf, [node for node in DT.children.values()]))
-
-
-def getHeight(DT):
-    if DT.isleaf:
-        return 1
-    return reduce(lambda x, y: max(x, y), map(getHeight, [node for node in DT.children.values()])) + 1
 
 if __name__ == '__main__':
     f = open('4_2_train.txt')
@@ -238,5 +228,4 @@ if __name__ == '__main__':
     for testSample in testSet:
         print(testSample, dt.predict(testSample))
 
-    print(countLeaf(dt.root))
-    print(getHeight(dt.root))
+    createPlot(dt.root)
