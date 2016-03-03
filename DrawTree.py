@@ -32,7 +32,7 @@ def plotTree(myTree, parentPt, nodeTxt):
     plotTree.yOff = plotTree.yOff - 1.0 / plotTree.totalD
 
     for key, item in myTree.children.items():
-        if not item.isleaf:
+        if not item.isLeaf:
             plotTree(item, cntrPt, key)
         else:
             plotTree.xOff = plotTree.xOff + 1 / plotTree.totalW
@@ -43,13 +43,13 @@ def plotTree(myTree, parentPt, nodeTxt):
 
 
 def countLeaf(DT):
-    if DT.isleaf:
+    if DT.isLeaf:
         return 1
     return reduce(lambda x, y: x + y, map(countLeaf, [node for node in DT.children.values()]))
 
 
 def getHeight(DT):
-    if DT.isleaf:
+    if DT.isLeaf:
         return 1
     return reduce(lambda x, y: max(x, y), map(getHeight, [node for node in DT.children.values()])) + 1
 

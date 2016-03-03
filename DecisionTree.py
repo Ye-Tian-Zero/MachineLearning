@@ -2,6 +2,7 @@
 from math import log2
 from DrawTree import createPlot
 
+
 def calEntropy(dataSet):
     categories = {}
     sampleCnt = len(dataSet)
@@ -121,10 +122,12 @@ def calMostExamplesClass(examples):
 
 
 class TreeNode:
-    def __init__(self, feature, isleaf=False):
+    def __init__(self, feature, isLeaf=False, fatherInfo=(None, None)):
         self.children = {}
         self.feature = feature
-        self.isleaf = isleaf
+        self.isLeaf = isLeaf
+        self.father = fatherInfo[0]
+        self.path = fatherInfo[1]
 
 
 class TreeError(BaseException):
@@ -133,7 +136,6 @@ class TreeError(BaseException):
 
 
 class DecisionTree:
-
     def __init__(self, dataSet, labels, method='entropy'):
         if method == 'entropy':
             self.chooseFunc = chooseBestFeatureWithEntropy
@@ -158,7 +160,7 @@ class DecisionTree:
 
     def predict(self, attrValues):
         root = self.root
-        while not root.isleaf:
+        while not root.isLeaf:
             attr = root.feature
             value = attrValues[self.labelIndex[attr]]
             if value not in root.children:
@@ -166,20 +168,19 @@ class DecisionTree:
             root = root.children[value]
         return root.feature
 
-
-    def createTree(self, dataSet, labels, attrValues):
+    def createTree(self, dataSet, labels, attrValues, fatherInfo=(None, None)):
         examples = [example[-1] for example in dataSet]
 
         if examples.count(examples[0]) == len(examples):
-            return TreeNode(examples[0], True)
+            return TreeNode(examples[0], True, fatherInfo)
 
         if len(labels) == 0 or len(set([''.join(x[:-1]) for x in dataSet])) == 1:
-            return TreeNode(calMostExamplesClass(examples), True)
+            return TreeNode(calMostExamplesClass(examples), True, fatherInfo)
 
         featIndex = self.chooseFunc(dataSet)
         feature = labels[featIndex]
 
-        retNode = TreeNode(feature)
+        retNode = TreeNode(feature, fatherInfo=fatherInfo)
 
         new_labels = labels[:featIndex]
         new_labels.extend(labels[featIndex + 1:])
@@ -191,17 +192,77 @@ class DecisionTree:
         for value in attrValues[featIndex]:
             subDataSet = splitDataSet(dataSet, featIndex, value)
             if len(subDataSet) == 0:
-                retNode.children[value] = TreeNode(calMostExamplesClass(examples), True)
+                retNode.children[value] = TreeNode(calMostExamplesClass(examples), True, (retNode, value))
             else:
-                retNode.children[value] = self.createTree(subDataSet, new_labels, new_attrValues)
+                retNode.children[value] = self.createTree(subDataSet, new_labels, new_attrValues, (retNode, value))
         return retNode
 
-    def pruning(self):
-        pass
+    def pruning(self, testDataSet):
+        nodeLst = breadthTravel(self.root)
+        i = len(nodeLst) - 1
+        while i >= 0:
+            currentAccuracy = self.calAccuracy(testDataSet)
+            testNode = nodeLst[i]
+            pathDic = {}
+            travelNode = testNode
+            while travelNode.father != None:
+                pathDic[travelNode.father.feature] = travelNode.path
+                travelNode = travelNode.father
+            filteredData = testDataSet[:]
+            for key, value in pathDic.items():
+                filteredData = [line for line in filteredData if line[self.labelIndex[key]] == value]
+            # 算最多的分类
+            examples = [example[-1] for example in filteredData]
+            newNode = TreeNode(calMostExamplesClass(examples), True, (testNode.father, testNode.path))
+
+            if testNode.father != None:
+                testNode.father.children[testNode.path] = newNode
+            else:
+                self.root = newNode
+
+            newAccuracy = self.calAccuracy(testDataSet)
+
+            if newAccuracy - currentAccuracy < 1e-5:
+                if testNode.father != None:
+                    testNode.father.children[testNode.path] = testNode
+                else:
+                    self.root = testNode
+            print(newAccuracy, '\t', currentAccuracy)
+
+            i -= 1
+
+    def calAccuracy(self, testDataSet):
+        predictResult = [result for result in map(self.predict, testDataSet)]
+        groundTruth = [GT[-1] for GT in testDataSet]
+        difference = 0
+
+        for i in range(len(predictResult)):
+            if predictResult[i] == groundTruth[i]:
+                difference += 1
+
+        return difference / len(predictResult)
+
+
+def breadthTravel(DT):
+    retLst = []
+    retLst.append(DT)
+    if DT.isLeaf:
+        return retLst
+    n = 0
+    while True:
+        for item in retLst[n].children.values():
+            if not item.isLeaf:
+                retLst.append(item)
+        n += 1
+        if n == len(retLst):
+            break
+    return retLst
 
 def preOrder(DT):
     print(DT.feature, DT.children.keys())
-    if DT.isleaf:
+    if DT.father is not None:
+        print(DT.father.feature, DT.path, end='\n\n')
+    if DT.isLeaf:
         return
     for item in DT.children.values():
         preOrder(item)
@@ -219,13 +280,14 @@ if __name__ == '__main__':
     # print(calEntropy(dataSet))
     dt = DecisionTree(dataSet, labels)
 
-    preOrder(dt.root)
+    # preOrder(dt.root)
     f = open('4_2_test.txt')
 
     testSet = []
     for line in f:
         testSet.append(line.strip().split())
-    for testSample in testSet:
-        print(testSample, dt.predict(testSample))
+    print(dt.calAccuracy(testSet))
 
+    dt.pruning(testSet)
+    print()
     createPlot(dt.root)
