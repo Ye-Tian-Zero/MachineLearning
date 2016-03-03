@@ -227,8 +227,6 @@ class DecisionTree:
                     testNode.father.children[testNode.path] = testNode
                 else:
                     self.root = testNode
-            print(newAccuracy, '\t', currentAccuracy)
-
             i -= 1
 
     def calAccuracy(self, testDataSet):
@@ -268,26 +266,37 @@ def preOrder(DT):
         preOrder(item)
 
 
-if __name__ == '__main__':
-    f = open('4_2_train.txt')
-    dataSet = []
-    labels = []
+def __loadTrainData(dataSetPath):
+    f = open(dataSetPath)
     s = f.readline()
+    labels = []
     labels.extend(s.strip().split('\t'))
-    for line in f:
+
+    dataSet = __loadTestData(f)
+
+    return dataSet, labels
+
+
+def __loadTestData(f):
+    file = None
+    file = f
+    if isinstance(f, str):
+        file = open(f)
+
+    dataSet = []
+    for line in file:
         dataSet.append(line.strip().split())
-    f.close()
-    # print(calEntropy(dataSet))
+
+    return dataSet
+
+
+if __name__ == '__main__':
+    dataSet, labels = __loadTrainData('4_2_train.txt')
+    # print (labels)
     dt = DecisionTree(dataSet, labels)
-
-    # preOrder(dt.root)
-    f = open('4_2_test.txt')
-
-    testSet = []
-    for line in f:
-        testSet.append(line.strip().split())
-    print(dt.calAccuracy(testSet))
-
+    testSet = __loadTestData('4_2_test.txt')
+    print(testSet)
+    print('Accuracy before pruning:', dt.calAccuracy(testSet))
     dt.pruning(testSet)
-    print()
+    print('Accuracy after pruning:', dt.calAccuracy(testSet))
     createPlot(dt.root)
