@@ -74,10 +74,12 @@ class BPNeuronNetwork(object):
 
 if __name__ == '__main__':
     n = BPNeuronNetwork(2, 1, 1)
-    n.train([[0, 0, [0]],
-             [0, 1, [0]],
+
+    n.train([[0, 0, [1]],
+             [0, 1, [1]],
              [1, 0, [0]],
-             [1, 1, [1]]])
+             [1, 1, [0]]])
+
     while True:
         testNum = input("input 2 nums: ")
         testNum = testNum.strip().split(' ')
