@@ -1,14 +1,16 @@
 from math import e
-
+from random import random
 
 def sigmoid(x):
     return 1 / (1 + e ** (-x))
 
 
 class Neuron(object):
-    def __init__(self, numInput, weight, af=sigmoid):
-        self.weights = [weight] * numInput
-        self.threshold = 0
+    def __init__(self, numInput, af=sigmoid):
+        self.weights = []
+        for i in range(numInput):
+            self.weights.append(random())
+        self.threshold = random()
         self.activationFunction = af
 
     def output(self, input):
@@ -20,9 +22,13 @@ class Neuron(object):
 
 
 class BPNeuronNetwork(object):
-    def __init__(self, numInputLayer, numHiddenLayer, numOutputLayer, weight=1.0, rateH=0.5, rateO=0.5):
-        self.hiddenLayer = [Neuron(numInputLayer, weight)] * numHiddenLayer
-        self.outputLayer = [Neuron(numHiddenLayer, weight)] * numOutputLayer
+    def __init__(self, numInputLayer, numHiddenLayer, numOutputLayer, rateH=0.2, rateO=0.2):
+        self.hiddenLayer = []
+        self.outputLayer = []
+        for i in range(numHiddenLayer):
+            self.hiddenLayer.append(Neuron(numInputLayer))
+        for i in range(numOutputLayer):
+            self.outputLayer.append(Neuron(numHiddenLayer))
         self.rateH = rateH
         self.rateO = rateO
 
@@ -36,13 +42,14 @@ class BPNeuronNetwork(object):
             LayerOutput.append(neuron.output(input))
         return LayerOutput
 
-    def train(self, trainData):
+    def train(self, trainData, train_times=10000):
         Cnt = 0
         while True:
-            if Cnt == 10000:
+            if Cnt == train_times:
                 break
             Cnt += 1
-            print(Cnt)
+            if Cnt % 1000 == 0:
+                print(Cnt)
             for dataSample in trainData:
                 hiddenLayerOutput = self.calLayerOutput(self.hiddenLayer, dataSample[:-1])
                 outputLayerOutput = self.calLayerOutput(self.outputLayer, hiddenLayerOutput)
@@ -68,16 +75,16 @@ class BPNeuronNetwork(object):
 
                 for j, neuron in enumerate(self.outputLayer):
                     for h in range(len(neuron.weights)):
-                        neuron.weights[h] += self.rateH * g[j] * hiddenLayerOutput[h]
-                    neuron.threshold -= self.rateH * g[j]
+                        neuron.weights[h] += self.rateO * g[j] * hiddenLayerOutput[h]
+                    neuron.threshold -= self.rateO * g[j]
 
 
 if __name__ == '__main__':
-    n = BPNeuronNetwork(2, 1, 1)
+    n = BPNeuronNetwork(2, 10, 1)
 
-    n.train([[0, 0, [1]],
-             [0, 1, [1]],
-             [1, 0, [0]],
+    n.train([[0, 1, [1]],
+             [1, 0, [1]],
+             [0, 0, [0]],
              [1, 1, [0]]])
 
     while True:
