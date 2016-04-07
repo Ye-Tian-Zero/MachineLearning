@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     rbf = RBFNN.RBFNN(1, centers)
 
-    rbf.train(trainData[0:5000], trainLabel[0:5000])
+    rbf.train(trainData, trainLabel)
 
     print(rbf.predict(trainData[1024][0]))
     print(trainData[1024][1])

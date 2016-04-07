@@ -62,6 +62,16 @@ class RBFNN(object):
                 print(n)
 
             k = 0
+            hiddenLayerOutput = np.array([self.calHiddenLayerOutput(data) for data in trainData])
+
+            outLayerOutput = np.array([self.calOutLayerOutput(hiddenData) for hiddenData in hiddenLayerOutput])
+
+            for i, hiddenNode in enumerate(self.hiddenLayer):
+                print(trainData.shape)
+                C = trainData - hiddenNode.parameters[0].reshape(1, trainData.shape[1])
+                print(C.shape)
+
+            print(outLayerOutput.shape)
             for i, train_data in enumerate(trainData):
                 print(k)
                 k += 1
